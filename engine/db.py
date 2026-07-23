@@ -8,7 +8,6 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import create_engine, Column, String, Boolean, DateTime, Numeric, ForeignKey, Date
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./local_dev.db")  # sqlite fallback for local testing only
@@ -22,9 +21,13 @@ def now_utc():
     return datetime.now(timezone.utc)
 
 
+def new_id():
+    return str(uuid.uuid4())
+
+
 class User(Base):
     __tablename__ = "users"
-    id = Column(UUID(as_uuid=True) if "postgres" in DATABASE_URL else String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, primary_key=True, default=new_id)
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     role = Column(String, default="user")  # 'user' or 'admin'
@@ -36,7 +39,7 @@ class User(Base):
 
 class ExchangeConnection(Base):
     __tablename__ = "exchange_connections"
-    id = Column(UUID(as_uuid=True) if "postgres" in DATABASE_URL else String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, primary_key=True, default=new_id)
     user_id = Column(String, ForeignKey("users.id"))
     exchange = Column(String, default="bybit")
     api_key_encrypted = Column(String)
@@ -50,7 +53,7 @@ class ExchangeConnection(Base):
 
 class Trade(Base):
     __tablename__ = "trades"
-    id = Column(UUID(as_uuid=True) if "postgres" in DATABASE_URL else String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, primary_key=True, default=new_id)
     user_id = Column(String, ForeignKey("users.id"))
     pair = Column(String)
     side = Column(String)
@@ -67,7 +70,7 @@ class Trade(Base):
 
 class DailyScan(Base):
     __tablename__ = "daily_scans"
-    id = Column(UUID(as_uuid=True) if "postgres" in DATABASE_URL else String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, primary_key=True, default=new_id)
     scan_date = Column(Date)
     pair = Column(String)
     atr_pct = Column(Numeric)
