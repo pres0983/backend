@@ -5,8 +5,8 @@ Fill in your Bybit API key/secret via environment variables — never hardcode t
 
 import os
 
-BYBIT_API_KEY = os.getenv("BYBIT_API_KEY", "c6bNNaq25LQwA1ywd4")
-BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET", "HgZqyYuzLh5GNqOpj56ADu1iBTfIi2A7imq9")
+BYBIT_API_KEY = os.getenv("BYBIT_API_KEY", "")
+BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET", "")
 BYBIT_TESTNET = os.getenv("BYBIT_TESTNET", "true").lower() == "true"  # start on testnet!
 
 TIMEFRAME = "1h"
