@@ -185,6 +185,22 @@ def ping():
     return {"status": "awake", "time": datetime.now(timezone.utc).isoformat()}
 
 
+# ---------- one-time bootstrap: creates your login by visiting a URL, no terminal needed ----------
+# IMPORTANT: remove this whole function once you've used it once.
+
+@app.get("/bootstrap-admin-x7k2")
+def bootstrap_admin(db: Session = Depends(get_db)):
+    email = "manzala0001@gmail.com"
+    password = "Trading2026!"
+    existing = db.query(User).filter(User.email == email).first()
+    if existing:
+        return {"message": "already exists", "email": email}
+    u = User(email=email, password_hash=hash_password(password), role="admin")
+    db.add(u)
+    db.commit()
+    return {"message": "created", "email": email, "password": password}
+
+
 # ---------- trading engine (per-connection, called by bot_manager) ----------
 
 def rank_pairs_for_today(user_exchange) -> list:
