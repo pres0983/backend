@@ -101,6 +101,17 @@ def login(body: LoginBody, db: Session = Depends(get_db)):
 def save_exchange_settings(body: ExchangeSettingsBody, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if body.mode not in ("demo", "live"):
         raise HTTPException(400, "mode must be 'demo' or 'live'")
+    if not body.api_key or not body.api_key.strip():
+        raise HTTPException(400, "API key is required")
+    if not body.api_secret or not body.api_secret.strip():
+        raise HTTPException(400, "API secret is required")
+
+    # actually test the keys against Bybit before saving, so "Saved" means it really works
+    try:
+        test_exchange = make_exchange(body.api_key, body.api_secret, demo=(body.mode == "demo"))
+        balance = get_balance_usdt(test_exchange)
+    except Exception as e:
+        raise HTTPException(400, f"Could not connect to Bybit with these keys: {str(e)}")
 
     conn = db.query(ExchangeConnection).filter(ExchangeConnection.user_id == user.id).first()
     if conn is None:
@@ -111,7 +122,22 @@ def save_exchange_settings(body: ExchangeSettingsBody, user: User = Depends(get_
     conn.api_secret_encrypted = encrypt_secret(body.api_secret)
     conn.mode = body.mode
     db.commit()
-    return {"ok": True, "mode": conn.mode}
+    return {"ok": True, "mode": conn.mode, "balance_usdt": balance}
+
+
+@app.get("/settings/balance")
+def get_balance(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    conn = db.query(ExchangeConnection).filter(ExchangeConnection.user_id == user.id).first()
+    if conn is None:
+        raise HTTPException(400, "No exchange connected yet")
+    try:
+        api_key = decrypt_secret(conn.api_key_encrypted)
+        api_secret = decrypt_secret(conn.api_secret_encrypted)
+        exchange = make_exchange(api_key, api_secret, demo=(conn.mode == "demo"))
+        balance = get_balance_usdt(exchange)
+        return {"balance_usdt": balance, "mode": conn.mode}
+    except Exception as e:
+        raise HTTPException(400, f"Could not fetch balance: {str(e)}")
 
 
 @app.post("/settings/bot-toggle")
